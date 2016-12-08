@@ -1,3 +1,4 @@
+# coding=utf8
 import algo
 import matrix_utils
 import matplotlib.pyplot as plt
@@ -5,23 +6,48 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import numpy as np
 
+# решение методом Гаусса
+def first_method():
+     step = 0.05
+     x = np.arange(0, 1, step)
+     z = np.arange(0, 1, step)
+     X, Z = np.meshgrid(x, z)
 
-step = 0.05
-x = np.arange(0, 1, step)
-z = np.arange(0, 1, step)
-#print x, z
-# X, Z = np.meshgrid(x, z)
+     z_len = len(z)
+     x_len = len(x)
 
-#print X
+     lambdas = [[0.0 for z in xrange(z_len + 2)] for x in xrange(x_len + 2)]
+     ans = ans_new = [20.0 for i in xrange(z_len * x_len)]
+     lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_new)
 
-z_len = len(z)
-x_len = len(x)
+     flag = 1
+     while flag < 2: #or not algo.is_conv(ans, ans_new):
+          flag += 1  # :((
 
-# matr = matrix_utils.gen_matr(z_len, x_len, step)
-# # matrix_utils.output_matrix(matr)
-# matr, ans = algo.gauss(matr)
-# #matrix_utils.output_matrix(matr)
-# #print ans
+          algo.is_conv(ans, ans_new)
+          ans = ans_new
+
+          lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans)
+          matr = matrix_utils.gen_matr(z_len, x_len, step, lambdas, ans)
+          matr, ans_new = algo.gauss(matr)
+
+     y = np.array(ans_new)
+     Y = y.reshape(X.shape)
+     draw_plot(X, Z, Y)
+
+
+def draw_plot(X, Z, Y):
+     fig = plt.figure()
+     ax = fig.add_subplot(111, projection="3d")
+     ax.plot_surface(X, Z, Y, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+     ax.set_xlabel('X Label')
+     ax.set_ylabel('Z Label')
+     ax.set_zlabel('Y Label')
+     plt.show()
+
+
+first_method()
+
 #
 # y = np.array(ans)
 # Y = y.reshape(X.shape)

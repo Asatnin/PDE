@@ -1,16 +1,17 @@
 # coding=utf8
+import extrapolation
 from math import pi, sin, e, pow
 
-lamb = 1.38  # коэф. теплопроводности
-u_oc = 293  # т-ра для краевых ур-й
-alpha = 1  # коэф. дл краевых ур-й
-f_t = 1  # т-ра для краевых условий
-k_p = 0.0062  # коэф. поглощения
-f_0 = 1
+# lamb = 1.38  # коэф. теплопроводности TODO поменять его, чтобы зависел от т-ры - сделано
+u_oc = 293.0  # т-ра для краевых ур-й
+alpha = 1.0  # коэф. дл краевых ур-й
+f_t = 1.0  # т-ра для краевых условий
+# k_p = 0.0062  # коэф. поглощения TODO поменять его, чтобы зависел от т-ры
+f_0 = 20.0
 
 
 # параметры - число внутренних точек по осям, шаг сетки (для правой части)
-def gen_matr(n_z, n_x, step):
+def gen_matr(n_z, n_x, step, lambdas, prev_t):
     n = n_z * n_x
     matrix = [[0.0 for z in xrange(n + 1)] for x in xrange(n)]
     num = 0  # номер уравнения для соответствующей точки
@@ -21,50 +22,51 @@ def gen_matr(n_z, n_x, step):
             up_j = j + 1
             if is_inside(up_i, up_j, n_z, n_x):
                 pos = number(up_i, up_j, n_z)
-                matrix[num][pos] = -1.0
+                matrix[num][pos] = lam_j_minus(lambdas, i, j)
 
             # ниже
             down_i = i
             down_j = j - 1
             if is_inside(down_i, down_j, n_z, n_x):
                 pos = number(down_i, down_j, n_z)
-                matrix[num][pos] = -1.0
+                matrix[num][pos] = lam_j_plus(lambdas, i, j)
 
             # слева
             left_i = i - 1
             left_j = j
             if is_inside(left_i, left_j, n_z, n_x):
                 pos = number(left_i, left_j, n_z)
-                matrix[num][pos] = -1.0
+                matrix[num][pos] = lam_i_minus(lambdas, i, j)
 
             # справа
             right_i = i + 1
             right_j = j
             if is_inside(right_i, right_j, n_z, n_x):
                 pos = number(right_i, right_j, n_z)
-                matrix[num][pos] = -1.0
+                matrix[num][pos] = lam_i_plus(lambdas, i, j)
 
-            matrix[num][num] = 4.0
+            matrix[num][num] = -(lam_j_plus(lambdas, i, j) + lam_j_minus(lambdas, i, j)
+                                 + lam_i_plus(lambdas, i, j) + lam_i_minus(lambdas, i, j))
 
             # правая часть
             x = step * j
             z = step * i
             # matrix[num][n] = sin(pi * x) * sin(pi * z) * step * step
-            matrix[num][n] = f_0 * pow(e, -k_p * z) * step * step
+            matrix[num][n] = -f_0 * pow(e, extrapolation.next_k_p(prev_t[number(i, j, n_z)]) * z) * step * step
 
             # добавление краевых условий
             if is_on_left_bound(i):
-                matrix[num][num] -= 1
-                matrix[num][n] += f_t * step / lamb
+                matrix[num][num] += 1
+                matrix[num][n] -= f_t * step / lambdas[0][j]
             if is_on_right_bound(i, n_z):
-                matrix[num][num] -= lamb / (lamb + alpha * step)
-                matrix[num][n] += alpha * step * u_oc / (lamb + alpha * step)
+                matrix[num][num] += lambdas[n_z][j] / (lambdas[n_z][j] + alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z][j] + alpha * step)
             if is_on_lower_bound(j):
-                matrix[num][num] -= lamb / (lamb - alpha * step)
-                matrix[num][n] += alpha * step * u_oc / (lamb - alpha * step)
+                matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)
             if is_on_upper_bound(j, n_x):
-                matrix[num][num] -= lamb / (lamb + alpha * step)
-                matrix[num][n] += alpha * step * u_oc / (lamb + alpha * step)
+                matrix[num][num] += lambdas[i][n_x] / (lambdas[i][n_x] + alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x] + alpha * step)
 
             num += 1
 
@@ -103,6 +105,42 @@ def is_on_left_bound(i):
 # проверка на принадлежность к правой границе
 def is_on_right_bound(i, n_z):
     return i == n_z
+
+
+# пересчитывает матрицу коэффициентов теплопроводности
+def recalc_lambda_coef(coefs, temps):
+    m = len(coefs)  # перебираем по z
+    n = len(coefs[0])  # перебираем по x
+    n_z = m - 2
+    for i in xrange(m):
+        for j in xrange(n):
+            if i != 0 and i != m - 1 and j != 0 and j != n - 1:
+                coefs[i][j] = lambda_coef(temps[number(i, j, n_z)])
+            else:
+                coefs[i][j] = lambda_coef(20.0)
+    return coefs
+
+
+# формула расчёта коэффициента теплопроводности от т-ры
+def lambda_coef(t):
+    return 0.134 * 0.1 * (1 + 4.35 * 0.0001 * t)
+
+
+# полуцелый коэф. теплопроводности
+def lam_j_minus(lambdas, i, j):
+    return (lambdas[i][j - 1] + lambdas[i][j]) / 2
+
+
+def lam_j_plus(lambdas, i, j):
+    return (lambdas[i][j + 1] + lambdas[i][j]) / 2
+
+
+def lam_i_minus(lambdas, i, j):
+    return (lambdas[i - 1][j] + lambdas[i][j]) / 2
+
+
+def lam_i_plus(lambdas, i, j):
+    return (lambdas[i + 1][j] + lambdas[i][j]) / 2
 
 
 # вывод

@@ -1,6 +1,7 @@
 # coding=utf8
 
 eps = 0.00001  # точность выбора опорного элемента
+eps_conv = 0.001  # точность сходимости
 
 
 # метод Гаусса
@@ -81,3 +82,15 @@ def tdma(b, d, c, r):
         x[i] = delta[i] * x[i + 1] + lamd[i]
 
     return x
+
+
+# проверка сходимости
+def is_conv(y_old, y_new):
+    max_diff = -1
+    for i in xrange(len(y_old)):
+        if abs(y_old[i] - y_new[i]) > max_diff:
+            max_diff = y_old[i] - y_new[i]
+    if max_diff >= eps_conv:
+        print max_diff
+        return False
+    return True
