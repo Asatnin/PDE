@@ -6,7 +6,7 @@ from math import pi, sin, e, pow
 u_oc = 293.0  # т-ра для краевых ур-й
 alpha = 1.0  # коэф. дл краевых ур-й
 f_t = 1.0  # т-ра для краевых условий
-# k_p = 0.0062  # коэф. поглощения TODO поменять его, чтобы зависел от т-ры
+k_p = 0.0062  # коэф. поглощения TODO поменять его, чтобы зависел от т-ры
 f_0 = 20.0
 
 
@@ -23,6 +23,7 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             if is_inside(up_i, up_j, n_z, n_x):
                 pos = number(up_i, up_j, n_z)
                 matrix[num][pos] = lam_j_minus(lambdas, i, j)
+                # matrix[num][pos] = lam_j_minus_2(i, j, prev_t, n_z)
 
             # ниже
             down_i = i
@@ -30,6 +31,7 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             if is_inside(down_i, down_j, n_z, n_x):
                 pos = number(down_i, down_j, n_z)
                 matrix[num][pos] = lam_j_plus(lambdas, i, j)
+                # matrix[num][pos] = lam_j_plus_2(i, j, prev_t, n_z)
 
             # слева
             left_i = i - 1
@@ -37,6 +39,7 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             if is_inside(left_i, left_j, n_z, n_x):
                 pos = number(left_i, left_j, n_z)
                 matrix[num][pos] = lam_i_minus(lambdas, i, j)
+                # matrix[num][pos] = lam_i_minus_2(i, j, prev_t, n_z)
 
             # справа
             right_i = i + 1
@@ -44,29 +47,33 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             if is_inside(right_i, right_j, n_z, n_x):
                 pos = number(right_i, right_j, n_z)
                 matrix[num][pos] = lam_i_plus(lambdas, i, j)
+                # matrix[num][pos] = lam_i_plus_2(i, j, prev_t, n_z)
 
             matrix[num][num] = -(lam_j_plus(lambdas, i, j) + lam_j_minus(lambdas, i, j)
                                  + lam_i_plus(lambdas, i, j) + lam_i_minus(lambdas, i, j))
+            # matrix[num][num] = -(lam_j_plus_2(i, j, prev_t, n_z) + lam_j_minus_2(i, j, prev_t, n_z)
+            #                      + lam_i_plus_2(i, j, prev_t, n_z) + lam_i_minus_2(i, j, prev_t, n_z))
 
             # правая часть
             x = step * j
             z = step * i
             # matrix[num][n] = sin(pi * x) * sin(pi * z) * step * step
-            matrix[num][n] = -f_0 * pow(e, extrapolation.next_k_p(prev_t[number(i, j, n_z)]) * z) * step * step
+            # matrix[num][n] = -f_0 * pow(e, extrapolation.next_k_p(prev_t[number(i, j, n_z)]) * z) * step * step
+            matrix[num][n] = -f_0 * pow(e, -k_p * z) * step * step
 
             # добавление краевых условий
             if is_on_left_bound(i):
                 matrix[num][num] += 1
                 matrix[num][n] -= f_t * step / lambdas[0][j]
-            if is_on_right_bound(i, n_z):
-                matrix[num][num] += lambdas[n_z][j] / (lambdas[n_z][j] + alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z][j] + alpha * step)
-            if is_on_lower_bound(j):
-                matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)
-            if is_on_upper_bound(j, n_x):
-                matrix[num][num] += lambdas[i][n_x] / (lambdas[i][n_x] + alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x] + alpha * step)
+            # if is_on_right_bound(i, n_z):
+            #     matrix[num][num] += lambdas[n_z][j] / (lambdas[n_z + 1][j] + alpha * step)
+            #     matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
+            # if is_on_lower_bound(j):
+            #     matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
+            #     matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)
+            # if is_on_upper_bound(j, n_x):
+            #     matrix[num][num] += lambdas[i][n_x] / (lambdas[i][n_x + 1] + alpha * step)
+            #     matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
 
             num += 1
 
@@ -141,6 +148,42 @@ def lam_i_minus(lambdas, i, j):
 
 def lam_i_plus(lambdas, i, j):
     return (lambdas[i + 1][j] + lambdas[i][j]) / 2
+
+
+def lam_j_minus_2(i, j, t, n_z):
+    p = number(i, j - 1, n_z)
+    if not (0 <= p < len(t)):
+        p = 20.0
+    else:
+        p = t[number(i, j - 1, n_z)]
+    return lambda_coef((p + t[number(i, j, n_z)]) / 2)
+
+
+def lam_j_plus_2(i, j, t, n_z):
+    p = number(i, j + 1, n_z)
+    if not (0 <= p < len(t)):
+        p = 20.0
+    else:
+        p = t[number(i, j + 1, n_z)]
+    return lambda_coef((p + t[number(i, j, n_z)]) / 2)
+
+
+def lam_i_minus_2(i, j, t, n_z):
+    p = number(i - 1, j, n_z)
+    if not (0 <= p < len(t)):
+        p = 20.0
+    else:
+        p = t[number(i - 1, j, n_z)]
+    return lambda_coef((p + t[number(i, j, n_z)]) / 2)
+
+
+def lam_i_plus_2(i, j, t, n_z):
+    p = number(i + 1, j, n_z)
+    if not (0 <= p < len(t)):
+        p = 20.0
+    else:
+        p = t[number(i + 1, j, n_z)]
+    return lambda_coef((p + t[number(i, j, n_z)]) / 2)
 
 
 # вывод

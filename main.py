@@ -8,7 +8,7 @@ import numpy as np
 
 # решение методом Гаусса
 def first_method():
-     step = 0.05
+     step = 0.08
      x = np.arange(0, 1, step)
      z = np.arange(0, 1, step)
      X, Z = np.meshgrid(x, z)
@@ -20,16 +20,20 @@ def first_method():
      ans = ans_new = [20.0 for i in xrange(z_len * x_len)]
      lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_new)
 
-     flag = 1
-     while flag < 2: #or not algo.is_conv(ans, ans_new):
-          flag += 1  # :((
+     flag = True
+     it = 0
+     while it < 5: #or not algo.is_conv(ans, ans_new):
+          flag = False  # :((
+          it += 1
 
-          algo.is_conv(ans, ans_new)
+          # algo.is_conv(ans, ans_new)
           ans = ans_new
 
           lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans)
           matr = matrix_utils.gen_matr(z_len, x_len, step, lambdas, ans)
           matr, ans_new = algo.gauss(matr)
+
+     print "With " + str(it) + " iterations"
 
      y = np.array(ans_new)
      Y = y.reshape(X.shape)

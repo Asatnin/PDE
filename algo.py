@@ -89,8 +89,8 @@ def is_conv(y_old, y_new):
     max_diff = -1
     for i in xrange(len(y_old)):
         if abs(y_old[i] - y_new[i]) > max_diff:
-            max_diff = y_old[i] - y_new[i]
+            max_diff = abs(y_old[i] - y_new[i])
     if max_diff >= eps_conv:
-        print max_diff
+        # print max_diff
         return False
     return True
