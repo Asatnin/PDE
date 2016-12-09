@@ -16,13 +16,13 @@ def first_method():
      z_len = len(z)
      x_len = len(x)
 
-     lambdas = [[0.0 for z in xrange(z_len + 2)] for x in xrange(x_len + 2)]
+     lambdas = [[0.0 for x in xrange(x_len + 2)] for z in xrange(z_len + 2)]
      ans = ans_new = [20.0 for i in xrange(z_len * x_len)]
      lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_new)
 
      flag = True
      it = 0
-     while it < 5: #or not algo.is_conv(ans, ans_new):
+     while flag or not algo.is_conv(ans, ans_new):
           flag = False  # :((
           it += 1
 
@@ -34,6 +34,12 @@ def first_method():
           matr, ans_new = algo.gauss(matr)
 
      print "With " + str(it) + " iterations"
+
+     # dirty hack
+     ans_new[0] = ans_new[(x_len - 1) * z_len]
+     ans_new[x_len - 1] = ans_new[len(ans_new) - 1]
+     # ans_new[x_len - 2] = ans_new[len(ans_new) - 2]
+     #ans_new[len(ans_new) - 1] = -500
 
      y = np.array(ans_new)
      Y = y.reshape(X.shape)

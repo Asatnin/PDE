@@ -65,15 +65,15 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             if is_on_left_bound(i):
                 matrix[num][num] += 1
                 matrix[num][n] -= f_t * step / lambdas[0][j]
-            # if is_on_right_bound(i, n_z):
-            #     matrix[num][num] += lambdas[n_z][j] / (lambdas[n_z + 1][j] + alpha * step)
-            #     matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
-            # if is_on_lower_bound(j):
-            #     matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
-            #     matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)
-            # if is_on_upper_bound(j, n_x):
-            #     matrix[num][num] += lambdas[i][n_x] / (lambdas[i][n_x + 1] + alpha * step)
-            #     matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
+            if is_on_right_bound(i, n_z):
+                matrix[num][num] += lambdas[n_z + 1][j] / (lambdas[n_z + 1][j] + alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
+            if is_on_lower_bound(j):
+                matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)
+            if is_on_upper_bound(j, n_x):
+                matrix[num][num] += lambdas[i][n_x + 1] / (lambdas[i][n_x + 1] + alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
 
             num += 1
 
