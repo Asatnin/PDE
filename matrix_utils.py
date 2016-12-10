@@ -58,8 +58,8 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             x = step * j
             z = step * i
             # matrix[num][n] = sin(pi * x) * sin(pi * z) * step * step
-            # matrix[num][n] = -f_0 * pow(e, extrapolation.next_k_p(prev_t[number(i, j, n_z)]) * z) * step * step
-            matrix[num][n] = -f_0 * pow(e, -k_p * z) * step * step
+            matrix[num][n] = -f_0 * pow(e, extrapolation.next_k_p(prev_t[number(i, j, n_z)]) * z) * step * step
+            # matrix[num][n] = -f_0 * pow(e, -k_p * z) * step * step
 
             # добавление краевых условий
             if is_on_left_bound(i):
