@@ -22,7 +22,7 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             up_j = j + 1
             if is_inside(up_i, up_j, n_z, n_x):
                 pos = number(up_i, up_j, n_z)
-                matrix[num][pos] = lam_j_minus(lambdas, i, j)
+                matrix[num][pos] = lam_j_plus(lambdas, i, j)
                 # matrix[num][pos] = lam_j_minus_2(i, j, prev_t, n_z)
 
             # ниже
@@ -30,7 +30,7 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
             down_j = j - 1
             if is_inside(down_i, down_j, n_z, n_x):
                 pos = number(down_i, down_j, n_z)
-                matrix[num][pos] = lam_j_plus(lambdas, i, j)
+                matrix[num][pos] = lam_j_minus(lambdas, i, j)
                 # matrix[num][pos] = lam_j_plus_2(i, j, prev_t, n_z)
 
             # слева
@@ -63,17 +63,17 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
 
             # добавление краевых условий
             if is_on_left_bound(i):
-                matrix[num][num] += 1
-                matrix[num][n] -= f_t * step / lambdas[0][j]
+                matrix[num][num] += lam_i_minus(lambdas, i, j)
+                matrix[num][n] -= lam_i_minus(lambdas, i, j) * step * f_t / lambdas[0][j]
             if is_on_right_bound(i, n_z):
-                matrix[num][num] += lambdas[n_z + 1][j] / (lambdas[n_z + 1][j] + alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
+                matrix[num][num] += lam_i_plus(lambdas, i, j) * lambdas[n_z + 1][j] / (lambdas[n_z + 1][j] + alpha * step)
+                matrix[num][n] -= lam_i_plus(lambdas, i, j) * alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
             if is_on_lower_bound(j):
-                matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)  # check "+=" instead
+                matrix[num][num] += lam_j_minus(lambdas, i, j) * lambdas[i][0] / (lambdas[i][0] - alpha * step)
+                matrix[num][n] += lam_j_minus(lambdas, i, j) * alpha * step * u_oc / (lambdas[i][0] - alpha * step)
             if is_on_upper_bound(j, n_x):
-                matrix[num][num] += lambdas[i][n_x + 1] / (lambdas[i][n_x + 1] + alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
+                matrix[num][num] += lam_j_plus(lambdas, i, j) * lambdas[i][n_x + 1] / (lambdas[i][n_x + 1] + alpha * step)
+                matrix[num][n] -= lam_j_plus(lambdas, i, j) * alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
 
             num += 1
 

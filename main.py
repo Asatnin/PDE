@@ -9,11 +9,11 @@ import numpy as np
 
 # решение методом Гаусса
 def first_method():
-    step = 0.05
+    step = 0.08
     x = np.arange(0, 1, step)
     z = np.arange(0, 1, step)
-    # X, Z = np.meshgrid(x, z)
-    X, Z = np.meshgrid(x[1:len(x) - 1], z[1:len(z) - 1])
+    X, Z = np.meshgrid(x, z)
+    # X, Z = np.meshgrid(x[1:len(x) - 1], z[1:len(z) - 1])
 
     z_len = len(z)
     x_len = len(x)
@@ -39,17 +39,18 @@ def first_method():
     print "With " + str(it) + " iterations"
 
     # dirty hack
-    res = []
-    for i in xrange(1, z_len + 1):
-        for j in xrange(1, x_len + 1):
-            if i != 1 and i != z_len and j != 1 and j != x_len:
-                res.append(ans_new[matrix_utils.number(i, j, z_len)])
+    # res = []
+    # for i in xrange(1, z_len + 1):
+    #     for j in xrange(1, x_len + 1):
+    #         if i != 1 and i != z_len and j != 1 and j != x_len:
+    #             res.append(ans_new[matrix_utils.number(i, j, z_len)])
     # ans_new[0] = ans_new[(x_len - 1) * z_len]
     # ans_new[x_len - 1] = ans_new[len(ans_new) - 1]
     # ans_new[x_len - 2] = ans_new[len(ans_new) - 2]
     # ans_new[len(ans_new) - 1] = -500
 
-    y = np.array(res)
+    # y = np.array(res)
+    y = np.array(ans_new)
     Y = y.reshape(X.shape)
     draw_plot(X, Z, Y)
 
@@ -114,8 +115,8 @@ def second_method():
     draw_plot(X, Z, Y)
 
 
-#first_method()
-second_method()
+first_method()
+# second_method()
 
 #
 # y = np.array(ans)
