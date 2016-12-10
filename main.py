@@ -6,57 +6,110 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import numpy as np
 
+
 # решение методом Гаусса
 def first_method():
-     step = 0.08
-     x = np.arange(0, 1, step)
-     z = np.arange(0, 1, step)
-     X, Z = np.meshgrid(x, z)
+    step = 0.05
+    x = np.arange(0, 1, step)
+    z = np.arange(0, 1, step)
+    X, Z = np.meshgrid(x, z)
 
-     z_len = len(z)
-     x_len = len(x)
+    z_len = len(z)
+    x_len = len(x)
 
-     lambdas = [[0.0 for x in xrange(x_len + 2)] for z in xrange(z_len + 2)]
-     ans = ans_new = [20.0 for i in xrange(z_len * x_len)]
-     lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_new)
+    lambdas = [[0.0 for x in xrange(x_len + 2)] for z in xrange(z_len + 2)]
+    ans = [20.0 for i in xrange(z_len * x_len)]
+    ans_new = [20.0 for i in xrange(z_len * x_len)]
+    lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_new)
 
-     flag = True
-     it = 0
-     while flag or not algo.is_conv(ans, ans_new):
-          flag = False  # :((
-          it += 1
+    flag = True
+    it = 0
+    while flag or not algo.is_conv(ans, ans_new):
+        flag = False  # :((
+        it += 1
 
-          # algo.is_conv(ans, ans_new)
-          ans = ans_new
+        # algo.is_conv(ans, ans_new)
+        ans = ans_new
 
-          lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans)
-          matr = matrix_utils.gen_matr(z_len, x_len, step, lambdas, ans)
-          matr, ans_new = algo.gauss(matr)
+        lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans)
+        matr = matrix_utils.gen_matr(z_len, x_len, step, lambdas, ans)
+        matr, ans_new = algo.gauss(matr)
 
-     print "With " + str(it) + " iterations"
+    print "With " + str(it) + " iterations"
 
-     # dirty hack
-     ans_new[0] = ans_new[(x_len - 1) * z_len]
-     ans_new[x_len - 1] = ans_new[len(ans_new) - 1]
-     # ans_new[x_len - 2] = ans_new[len(ans_new) - 2]
-     #ans_new[len(ans_new) - 1] = -500
+    # dirty hack
+    ans_new[0] = ans_new[(x_len - 1) * z_len]
+    ans_new[x_len - 1] = ans_new[len(ans_new) - 1]
+    # ans_new[x_len - 2] = ans_new[len(ans_new) - 2]
+    # ans_new[len(ans_new) - 1] = -500
 
-     y = np.array(ans_new)
-     Y = y.reshape(X.shape)
-     draw_plot(X, Z, Y)
+    y = np.array(ans_new)
+    Y = y.reshape(X.shape)
+    draw_plot(X, Z, Y)
 
 
 def draw_plot(X, Z, Y):
-     fig = plt.figure()
-     ax = fig.add_subplot(111, projection="3d")
-     ax.plot_surface(X, Z, Y, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-     ax.set_xlabel('X Label')
-     ax.set_ylabel('Z Label')
-     ax.set_zlabel('Y Label')
-     plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X, Z, Y, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Z Label')
+    ax.set_zlabel('Y Label')
+    plt.show()
+
+
+# решение локально-одномерным методом
+def second_method():
+    t_step = 0.05  # шаг по времени
+    step = 0.05
+    x = np.arange(0, 1, step)
+    z = np.arange(0, 1, step)
+    X, Z = np.meshgrid(x, z)
+
+    z_len = len(z)
+    x_len = len(x)
+
+    lambdas = [[0.0 for x in xrange(x_len + 2)] for z in xrange(z_len + 2)]
+    ans = [20.0 for i in xrange(z_len * x_len)]
+    ans_prom = [20.0 for i in xrange(z_len * x_len)]
+    ans_new = [20.0 for i in xrange(z_len * x_len)]
+
+    lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_new)
+
+    flag = True
+    it = 0
+    while flag or not algo.is_conv(ans, ans_new):
+        flag = False  # :((
+        it += 1
+
+        algo.is_conv(ans, ans_new)
+        ans = list(ans_new)
+
+        lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans)
+
+        for i in xrange(1, z_len + 1):
+            pod, gl, nad, f = matrix_utils.gen_pr_matr_prom(i, z_len, x_len, step, t_step, lambdas, ans)
+            res = algo.tdma(pod, nad, gl, f)
+            for j in xrange(1, x_len + 1):
+                ans_prom[matrix_utils.number(i, j, z_len)] = res[j - 1]
+
+        lambdas = matrix_utils.recalc_lambda_coef(lambdas, ans_prom)
+
+        for j in xrange(1, x_len + 1):
+            pod, gl, nad, f = matrix_utils.gen_pr_matr_new(j, z_len, x_len, step, t_step, lambdas, ans_prom)
+            res = algo.tdma(pod, nad, gl, f)
+            for i in xrange(1, z_len + 1):
+                ans_new[matrix_utils.number(i, j, z_len)] = res[i - 1]
+
+    print "With " + str(it) + " iterations"
+
+    y = np.array(ans_new)
+    Y = y.reshape(X.shape)
+    draw_plot(X, Z, Y)
 
 
 first_method()
+# second_method()
 
 #
 # y = np.array(ans)

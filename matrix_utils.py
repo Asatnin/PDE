@@ -70,7 +70,7 @@ def gen_matr(n_z, n_x, step, lambdas, prev_t):
                 matrix[num][n] -= alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
             if is_on_lower_bound(j):
                 matrix[num][num] += lambdas[i][0] / (lambdas[i][0] - alpha * step)
-                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)
+                matrix[num][n] -= alpha * step * u_oc / (lambdas[i][0] - alpha * step)  # check "+=" instead
             if is_on_upper_bound(j, n_x):
                 matrix[num][num] += lambdas[i][n_x + 1] / (lambdas[i][n_x + 1] + alpha * step)
                 matrix[num][n] -= alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
@@ -184,6 +184,62 @@ def lam_i_plus_2(i, j, t, n_z):
     else:
         p = t[number(i + 1, j, n_z)]
     return lambda_coef((p + t[number(i, j, n_z)]) / 2)
+
+
+# генерации массивов коэффициентов диагональных элементов для метода прогонки (промежуточный слой)
+# i должен быть внутри прямоугольника
+def gen_pr_matr_prom(i, n_z, n_x, step, t_step, lambdas, y):
+    a = [0.0] * n_x  # под главной диагональю
+    b = [0.0] * n_x  # главная диагональ
+    c = [0.0] * (n_x - 1)  # над главной диагональю
+    f = [0.0] * n_x  # столбец правых частей
+    z = i * step  # координата точки в прямоугольнике
+    for j in xrange(2, n_x + 1):
+        a[j - 1] = lam_j_minus(lambdas, i, j)
+    for j in xrange(1, n_x + 1):
+        b[j - 1] = -(step * step / t_step + lam_j_plus(lambdas, i, j) + lam_j_minus(lambdas, i, j))
+        if j == 1:  # кр. условие снизу
+            b[j - 1] += lam_j_minus(lambdas, i, j) * lambdas[i][0] / (lambdas[i][0] - alpha * step)
+        if j == n_x:  # кр. условие сверху
+            b[j - 1] += lam_j_plus(lambdas, i, j) * lambdas[i][n_x + 1] / (lambdas[i][n_x + 1] + alpha * step)
+    for j in xrange(1, n_x):
+        c[j - 1] = lam_j_plus(lambdas, i, j)
+    for j in xrange(1, n_x + 1):
+        f[j - 1] = (-f_0 * pow(e, -k_p * z) / 2.0 - y[number(i, j, n_z)] / t_step) * step * step
+        if j == 1:  # кр. условие снизу
+            f[j - 1] += lam_j_minus(lambdas, i, j) * alpha * step * u_oc / (lambdas[i][0] - alpha * step)
+        if j == n_x:  # кр. условие сверху
+            f[j - 1] -= lam_j_plus(lambdas, i, j) * alpha * step * u_oc / (lambdas[i][n_x + 1] + alpha * step)
+
+    return a, b, c, f
+
+
+# генерации массивов коэффициентов диагональных элементов для метода прогонки (новый слой)
+# j должен быть внутри прямоугольника
+def gen_pr_matr_new(j, n_z, n_x, step, t_step, lambdas, y):
+    a = [0.0] * n_z  # под главной диагональю
+    b = [0.0] * n_z  # главная диагональ
+    c = [0.0] * (n_z - 1)  # над главной диагональю
+    f = [0.0] * n_z  # столбец правых частей
+    for i in xrange(2, n_z + 1):
+        a[i - 1] = lam_i_minus(lambdas, i, j)
+    for i in xrange(1, n_z + 1):
+        b[i - 1] = -(step * step / t_step + lam_i_plus(lambdas, i, j) + lam_i_minus(lambdas, i, j))
+        if i == 1:  # кр. условие слева
+            b[i - 1] += lam_i_minus(lambdas, i, j)
+        if i == n_z:  # кр. условие справа
+            b[i - 1] += lam_i_plus(lambdas, i, j) * lambdas[n_z + 1][j] / (lambdas[n_z + 1][j] + alpha * step)
+    for i in xrange(1, n_z):
+        c[i - 1] = lam_i_plus(lambdas, i, j)
+    for i in xrange(1, n_z + 1):
+        z = i * step  # координата точки в прямоугольнике
+        f[i - 1] = (-f_0 * pow(e, -k_p * z) / 2.0 - y[number(i, j, n_z)] / t_step) * step * step
+        if i == 1:  # кр. условие слева
+            f[i - 1] -= lam_i_minus(lambdas, i, j) * step * f_t / lambdas[0][j]
+        if i == n_z:  # кр. условие справа
+            f[i - 1] -= lam_i_plus(lambdas, i, j) * alpha * step * u_oc / (lambdas[n_z + 1][j] + alpha * step)
+
+    return a, b, c, f
 
 
 # вывод
