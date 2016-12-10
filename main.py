@@ -9,7 +9,7 @@ import numpy as np
 
 # решение методом Гаусса
 def first_method():
-    step = 0.05
+    step = 0.08
     x = np.arange(0, 1, step)
     z = np.arange(0, 1, step)
     X, Z = np.meshgrid(x, z)
@@ -108,8 +108,8 @@ def second_method():
     draw_plot(X, Z, Y)
 
 
-first_method()
-# second_method()
+#first_method()
+second_method()
 
 #
 # y = np.array(ans)

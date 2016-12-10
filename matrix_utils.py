@@ -205,7 +205,9 @@ def gen_pr_matr_prom(i, n_z, n_x, step, t_step, lambdas, y):
     for j in xrange(1, n_x):
         c[j - 1] = lam_j_plus(lambdas, i, j)
     for j in xrange(1, n_x + 1):
-        f[j - 1] = (-f_0 * pow(e, -k_p * z) / 2.0 - y[number(i, j, n_z)] / t_step) * step * step
+        # f[j - 1] = (-f_0 * pow(e, -k_p * z) / 2.0 - y[number(i, j, n_z)] / t_step) * step * step
+        f[j - 1] = (-f_0 * pow(e, -extrapolation.next_k_p(y[number(i, j, n_z)]) * z) / 2.0
+                    - y[number(i, j, n_z)] / t_step) * step * step
         if j == 1:  # кр. условие снизу
             f[j - 1] += lam_j_minus(lambdas, i, j) * alpha * step * u_oc / (lambdas[i][0] - alpha * step)
         if j == n_x:  # кр. условие сверху
@@ -233,7 +235,9 @@ def gen_pr_matr_new(j, n_z, n_x, step, t_step, lambdas, y):
         c[i - 1] = lam_i_plus(lambdas, i, j)
     for i in xrange(1, n_z + 1):
         z = i * step  # координата точки в прямоугольнике
-        f[i - 1] = (-f_0 * pow(e, -k_p * z) / 2.0 - y[number(i, j, n_z)] / t_step) * step * step
+        # f[i - 1] = (-f_0 * pow(e, -k_p * z) / 2.0 - y[number(i, j, n_z)] / t_step) * step * step
+        f[i - 1] = (-f_0 * pow(e, -extrapolation.next_k_p(y[number(i, j, n_z)]) * z) / 2.0
+                    - y[number(i, j, n_z)] / t_step) * step * step
         if i == 1:  # кр. условие слева
             f[i - 1] -= lam_i_minus(lambdas, i, j) * step * f_t / lambdas[0][j]
         if i == n_z:  # кр. условие справа
